@@ -12,14 +12,15 @@ virtualSensorName = 'tablePresence'
 	
 #########################
 
-th = 98
-windowTime = 30
-falsePositiveRatio = 0.016
-maxTh = 155
-cycleDelay = 0.01
+th = 35
+windowTime = 2
+falsePositiveRatio = 0.075
+maxThDelta = 30
+cycleDelay = 0.005
+meanCycles = 1000
+subMeanCycles = 5
 
 #########################
-
 
 
 status = 0
@@ -38,6 +39,10 @@ def printVS( data ):
 		status = 1
 	elif status == 1:
 		status = 0
+
+def magnitude(x,y,z):
+	p = x*x +y*y + z*z
+	return math.sqrt(p)
 
 def dot():
 	sys.stdout.write('.')
@@ -62,25 +67,25 @@ else:
 accel = Accel()
 accel.calibrate()
 
-mean = [0,0,0]
-	
-for x in range (0, 20):
+print "calculating bias..."
+mean = 0	
+for x in range (0, meanCycles):
 	accelVals = accel.get() 
-	mean[0] = mean[0] + accelVals[0]
-	mean[1] = mean[1] + accelVals[1]
-	mean[2] = mean[2] + accelVals[2]
-	sleep(0.02)
+	
+	mag = magnitude( accelVals[0], accelVals[1], accelVals[2])
+	mean = mean + mag
+	sleep(cycleDelay)
 
-mean[0] = mean[0] / 20
-mean[1] = mean[1] / 20
-mean[2] = mean[2] / 20	
+mean = mean / meanCycles
+print "bias calculated: " + str(mean) 
 
-print "average calculated"
+maxTh = mean + maxThDelta
 
 cycles = windowTime * (1/cycleDelay)
 noiseTh = falsePositiveRatio * cycles
 
 print "accelerometer treshold = " + str(th)
+print "maximum treshold = " + str(maxTh)
 print "False Positive Ratio = " + str(falsePositiveRatio)
 print "windowTime = " + str(windowTime)
 print "noiseTh = " + str(noiseTh)
@@ -93,36 +98,28 @@ while True: # Run forever
 	max = 0
 	
 	for x in range(0, int(cycles)):
-
-		accelVals = accel.get() 
+		subMean = 0
+		for x in range (0, subMeanCycles):
+			accelVals = accel.get() 
 	
-		if abs( accelVals[0]   - mean[0] ) > th:
-			#print "presence" + str(time.time())
-			#dot()
+			mag = magnitude( accelVals[0], accelVals[1], accelVals[2])
+			subMean = subMean + mag
+			sleep(cycleDelay)
+
+		mag = subMean / subMeanCycles
+
+		#accelVals = accel.get() 
+		#mag = magnitude( accelVals[0], accelVals[1], accelVals[2])
+	
+		if abs( mag  ) > th:
 			presence = presence + 1
-		elif abs( accelVals[1] - mean[1] ) > th:
-			#print "presence" + str(time.time())
-			#dot()
-			presence = presence + 1
-		elif abs( accelVals[2] - mean[2] ) > th:
-			#print "presence" + str(time.time())	
-			#dot()
-			presence = presence + 1
-		#else:
-			#presence = 0
 
-## evaluate max
-		if abs( accelVals[0]   - mean[0] ) > max:
-			max = abs( accelVals[0]   - mean[0] )
+		## evaluate max
+		if abs( mag  ) > max:
+			max = mag 
 
-		if abs( accelVals[1]   - mean[1] ) > max:
-			max = abs(accelVals[1]   - mean[1])
-
-		if abs( accelVals[2]   - mean[2] ) > max:
-			max = (accelVals[2]   - mean[2])
-#################
-
-		sleep(cycleDelay)
+		print mag
+		#sleep(cycleDelay)
 
 	print "-------WINDOW-------" + str(presence) + "     max acc value: " + str(max)
 

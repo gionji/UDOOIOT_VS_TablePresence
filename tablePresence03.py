@@ -8,23 +8,20 @@ import sys
 import math
 
 virtualSensorName = 'tablePresence'
-
 	
 #########################
-
 th = 98
 windowTime = 30
 falsePositiveRatio = 0.016
 maxTh = 155
 cycleDelay = 0.01
-
+timerMax = 5
 #########################
-
-
 
 status = 0
 presence = 0
 prevPresence = 0
+counter = 0
 
 def printVS( data ):
 	global status
@@ -43,6 +40,13 @@ def dot():
 	sys.stdout.write('.')
 	sys.stdout.flush()
 	
+
+def resetTimer():
+	global counter
+	counter = timerMax * (1/cycleDelay)
+	sleep(1)
+	print "counter reset"
+
 
 file = 'data'
 directory = '/sensors/'+ virtualSensorName +'/'
@@ -88,46 +92,27 @@ print "noiseTh = " + str(noiseTh)
 max = 0;
 
 while True: # Run forever
-
-	presence = 0
+	
 	max = 0
 	
-	for x in range(0, int(cycles)):
-
-		accelVals = accel.get() 
+	accelVals = accel.get() 
 	
-		if abs( accelVals[0]   - mean[0] ) > th:
-			#print "presence" + str(time.time())
-			#dot()
-			presence = presence + 1
-		elif abs( accelVals[1] - mean[1] ) > th:
-			#print "presence" + str(time.time())
-			#dot()
-			presence = presence + 1
-		elif abs( accelVals[2] - mean[2] ) > th:
-			#print "presence" + str(time.time())	
-			#dot()
-			presence = presence + 1
-		#else:
-			#presence = 0
+	## evaluate max
+	if abs( accelVals[0] - mean[0] ) > maxTh:
+		resetTimer()
+	elif abs( accelVals[1] - mean[1] ) > maxTh:
+		resetTimer()
+	elif abs( accelVals[2] - mean[2] ) > maxTh:
+		resetTimer()	
 
-## evaluate max
-		if abs( accelVals[0]   - mean[0] ) > max:
-			max = abs( accelVals[0]   - mean[0] )
+	sleep(cycleDelay)
 
-		if abs( accelVals[1]   - mean[1] ) > max:
-			max = abs(accelVals[1]   - mean[1])
-
-		if abs( accelVals[2]   - mean[2] ) > max:
-			max = (accelVals[2]   - mean[2])
-#################
-
-		sleep(cycleDelay)
-
-	print "-------WINDOW-------" + str(presence) + "     max acc value: " + str(max)
-
-	if presence > noiseTh or max > maxTh:
+	if counter > 0 :
+		counter = counter - 1	
 		presence = 1
+	elif counter == 1 :
+		presence = 1
+		print "ready to zero"
 	else:
 		presence = 0
 	
