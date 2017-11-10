@@ -6,6 +6,7 @@ import time
 import os
 import sys
 import math
+from time import gmtime, strftime
 
 virtualSensorName = 'tablePresence'
 	
@@ -15,7 +16,7 @@ windowTime = 30
 falsePositiveRatio = 0.016
 maxTh = 155
 cycleDelay = 0.01
-timerMax = 5
+timerMax = 300
 #########################
 
 status = 0
@@ -26,7 +27,7 @@ counter = 0
 def printVS( data ):
 	global status
 	data = str(data).strip()		
-	print data
+	#print data
 	dataIot = open(directory + file, "w")
 	dataIot.write(str(status) + ',' + data)
 	dataIot.flush()
@@ -41,11 +42,11 @@ def dot():
 	sys.stdout.flush()
 	
 
-def resetTimer():
+def resetTimer(val):
 	global counter
 	counter = timerMax * (1/cycleDelay)
 	sleep(1)
-	print "counter reset"
+	print str(strftime("%Y-%m-%d %H:%M:%S", gmtime())) + "  TImer reset - Value: " + str(val)
 
 
 file = 'data'
@@ -89,34 +90,30 @@ print "False Positive Ratio = " + str(falsePositiveRatio)
 print "windowTime = " + str(windowTime)
 print "noiseTh = " + str(noiseTh)
 
-max = 0;
+
+print str(strftime("%Y-%m-%d %H:%M:%S", gmtime()))
 
 while True: # Run forever
-	
-	max = 0
 	
 	accelVals = accel.get() 
 	
 	## evaluate max
 	if abs( accelVals[0] - mean[0] ) > maxTh:
-		resetTimer()
+		resetTimer( abs( accelVals[0] - mean[0]) )
 	elif abs( accelVals[1] - mean[1] ) > maxTh:
-		resetTimer()
+		resetTimer( abs( accelVals[1] - mean[1] ))
 	elif abs( accelVals[2] - mean[2] ) > maxTh:
-		resetTimer()	
+		resetTimer(abs( accelVals[2] - mean[2] ))	
 
 	sleep(cycleDelay)
 
 	if counter > 0 :
 		counter = counter - 1	
 		presence = 1
-	elif counter == 1 :
-		presence = 1
-		print "ready to zero"
 	else:
 		presence = 0
 	
 	if prevPresence != presence:
 		printVS(presence)
 		prevPresence = presence
-		print str(time.time())	 + "Update Virtual Sensor - value: " + str(presence) 
+		print str(strftime("%Y-%m-%d %H:%M:%S", gmtime())) + "  Update Virtual Sensor - value: " + str(presence) 
