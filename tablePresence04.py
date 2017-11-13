@@ -14,7 +14,7 @@ virtualSensorName = 'tablePresence'
 th = 98
 windowTime = 30
 falsePositiveRatio = 0.016
-maxTh = 165
+maxTh = 190
 cycleDelay = 0.01
 timerMax = 300
 #########################
@@ -96,14 +96,16 @@ printVS(0)
 while True: # Run forever
 	
 	accelVals = accel.get() 
-	
+
+	modulus = math.sqrt((accelVals[0]*accelVals[0]) + (accelVals[1]*accelVals[1]) + (accelVals[2]*accelVals[2]))
+
 	## evaluate max
-	if abs( accelVals[0] - mean[0] ) > maxTh:
-		resetTimer( abs( accelVals[0] - mean[0]) )
-	elif abs( accelVals[1] - mean[1] ) > maxTh:
-		resetTimer( abs( accelVals[1] - mean[1] ))
-	elif abs( accelVals[2] - mean[2] ) > maxTh:
-		resetTimer(abs( accelVals[2] - mean[2] ))	
+	if abs( modulus ) > maxTh:
+		resetTimer( modulus )
+	elif abs( modulus ) > maxTh:
+		resetTimer( abs( modulus ))
+	elif abs( modulus ) > maxTh:
+		resetTimer(abs( modulus ))	
 
 	sleep(cycleDelay)
 
