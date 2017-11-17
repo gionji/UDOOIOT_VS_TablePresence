@@ -14,7 +14,7 @@ virtualSensorName = 'tablePresence'
 th = 98
 windowTime = 30
 falsePositiveRatio = 0.016
-maxTh = 100
+maxTh = 140
 cycleDelay = 0.01
 timerMax = 300
 #########################
